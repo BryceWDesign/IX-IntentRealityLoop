@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=69.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ix-intent-reality-loop"
+version = "0.1.0"
+description = "Source-available evaluation runtime for governed intent, permission, action, feedback, memory, and replay evidence loops."
+requires-python = ">=3.11"
+authors = [
+  { name = "Bryce Lovell" }
+]
+license = { text = "IX-IntentRealityLoop Source-Available Evaluation License v1.0" }
+keywords = [
+  "ai-governance",
+  "ai-safety",
+  "agency",
+  "assurance",
+  "evidence",
+  "human-in-the-loop",
+  "intent",
+  "memory",
+  "replay",
+  "sensorimotor",
+]
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-config --strict-markers -q"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "A",
+  "ARG",
+  "B",
+  "C4",
+  "E",
+  "F",
+  "I",
+  "N",
+  "PT",
+  "RET",
+  "RUF",
+  "SIM",
+  "UP",
+  "W",
+]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+mypy_path = "src"
+files = ["src", "tests"]
