@@ -23,6 +23,8 @@ def _lane(
     objective: str | None = None,
     status: ExecutionLaneStatus = ExecutionLaneStatus.COMPLETE,
     blocked_reasons: tuple[str, ...] = (),
+    assumptions: tuple[str, ...] = (),
+    constraints_preserved: tuple[str, ...] = ("human authority remains final",),
 ) -> ExecutionLaneResult:
     return ExecutionLaneResult(
         lane_id=lane_id,
@@ -34,6 +36,8 @@ def _lane(
         confidence=BoundedScore(confidence),
         status=status,
         doctrine_rule_codes=("completion_not_output",),
+        assumptions=assumptions,
+        constraints_preserved=constraints_preserved,
         blocked_reasons=blocked_reasons,
     )
 
@@ -175,9 +179,72 @@ def test_build_lane_comparison_record_blocks_missing_triadic_lane() -> None:
     )
 
 
+def test_build_lane_comparison_record_allows_aligned_self_surpass_lane() -> None:
+    literal = _lane(
+        lane_id="lane-literal",
+        kind=ExecutionLaneKind.LITERAL,
+        confidence=0.72,
+        objective="Summarize the evidence.",
+    )
+    interpreted = _lane(
+        lane_id="lane-interpreted",
+        kind=ExecutionLaneKind.INTERPRETED,
+        confidence=0.88,
+        objective="Summarize the evidence.",
+    )
+    self_surpass = _lane(
+        lane_id="lane-self-surpass",
+        kind=ExecutionLaneKind.SELF_SURPASS,
+        confidence=0.81,
+        objective="Summarize the evidence.",
+        assumptions=(),
+        constraints_preserved=("do not invent evidence",),
+    )
+
+    record = build_lane_comparison_record(
+        comparison_id="comparison-007",
+        lanes=(literal, interpreted, self_surpass),
+    )
+
+    assert record.has_full_triadic_coverage
+    assert record.divergence_reasons == ()
+
+
+def test_build_lane_comparison_record_flags_unbounded_self_surpass_lane() -> None:
+    literal = _lane(
+        lane_id="lane-literal",
+        kind=ExecutionLaneKind.LITERAL,
+        confidence=0.72,
+        objective="Summarize the evidence.",
+    )
+    interpreted = _lane(
+        lane_id="lane-interpreted",
+        kind=ExecutionLaneKind.INTERPRETED,
+        confidence=0.88,
+        objective="Summarize the evidence.",
+    )
+    self_surpass = _lane(
+        lane_id="lane-self-surpass",
+        kind=ExecutionLaneKind.SELF_SURPASS,
+        confidence=0.81,
+        objective="Summarize the evidence.",
+        assumptions=(),
+        constraints_preserved=(),
+    )
+
+    record = build_lane_comparison_record(
+        comparison_id="comparison-008",
+        lanes=(literal, interpreted, self_surpass),
+    )
+
+    assert record.divergence_reasons == (
+        "self-surpass objective requires boundary review",
+    )
+
+
 def test_build_lane_comparison_record_rejects_empty_lane_set() -> None:
     with pytest.raises(ValueError, match="lanes must not be empty"):
-        build_lane_comparison_record(comparison_id="comparison-007", lanes=())
+        build_lane_comparison_record(comparison_id="comparison-009", lanes=())
 
 
 def test_build_lane_comparison_record_rejects_mixed_intents() -> None:
@@ -200,6 +267,6 @@ def test_build_lane_comparison_record_rejects_mixed_intents() -> None:
 
     with pytest.raises(ValueError, match="all lanes must share"):
         build_lane_comparison_record(
-            comparison_id="comparison-008",
+            comparison_id="comparison-010",
             lanes=(literal, other),
         )
