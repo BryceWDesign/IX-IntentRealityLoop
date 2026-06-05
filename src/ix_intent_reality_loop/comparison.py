@@ -26,15 +26,6 @@ from ix_intent_reality_loop.lanes import (
 )
 
 
-_REQUIRED_TRIADIC_KINDS = frozenset(
-    {
-        ExecutionLaneKind.LITERAL,
-        ExecutionLaneKind.INTERPRETED,
-        ExecutionLaneKind.SELF_SURPASS,
-    }
-)
-
-
 @dataclass(frozen=True, slots=True)
 class LaneComparisonRecord:
     """Comparison of competing execution lanes for one intent."""
@@ -64,7 +55,10 @@ class LaneComparisonRecord:
         object.__setattr__(
             self,
             "lane_ids",
-            tuple(require_non_empty_text(lane_id, "lane_id") for lane_id in self.lane_ids),
+            tuple(
+                require_non_empty_text(lane_id, "lane_id")
+                for lane_id in self.lane_ids
+            ),
         )
         object.__setattr__(
             self,
@@ -141,6 +135,41 @@ def _require_same_intent(lanes: tuple[ExecutionLaneResult, ...]) -> str:
     return lanes[0].intent_id
 
 
+def _self_surpass_requires_boundary_review(
+    *,
+    literal_objective: str | None,
+    interpreted_objective: str | None,
+    self_surpass_lane: ExecutionLaneResult | None,
+) -> bool:
+    """Return whether self-surpass differs enough to require boundary review.
+
+    A self-surpass lane is not automatically divergent. It becomes divergent
+    when it changes objective text, carries assumptions, or lacks preserved
+    boundary checks. This lets fully aligned triadic lanes proceed while still
+    forcing boundary review for real improvement pressure.
+    """
+
+    if self_surpass_lane is None:
+        return False
+
+    reference_objectives = tuple(
+        objective.strip()
+        for objective in (literal_objective, interpreted_objective)
+        if objective is not None
+    )
+    if not reference_objectives:
+        return True
+
+    self_surpass_objective = self_surpass_lane.objective.strip()
+    if self_surpass_objective not in reference_objectives:
+        return True
+
+    if self_surpass_lane.assumptions:
+        return True
+
+    return not self_surpass_lane.constraints_preserved
+
+
 def _objective_divergence_reasons(
     lanes: tuple[ExecutionLaneResult, ...],
 ) -> tuple[str, ...]:
@@ -148,16 +177,21 @@ def _objective_divergence_reasons(
 
     reasons: list[str] = []
     objectives_by_kind = {lane.kind: lane.objective for lane in lanes}
+    lanes_by_kind = {lane.kind: lane for lane in lanes}
 
     literal_objective = objectives_by_kind.get(ExecutionLaneKind.LITERAL)
     interpreted_objective = objectives_by_kind.get(ExecutionLaneKind.INTERPRETED)
-    self_surpass_objective = objectives_by_kind.get(ExecutionLaneKind.SELF_SURPASS)
+    self_surpass_lane = lanes_by_kind.get(ExecutionLaneKind.SELF_SURPASS)
 
     if literal_objective and interpreted_objective:
         if literal_objective.strip() != interpreted_objective.strip():
             reasons.append("literal and interpreted objectives differ")
 
-    if self_surpass_objective:
+    if _self_surpass_requires_boundary_review(
+        literal_objective=literal_objective,
+        interpreted_objective=interpreted_objective,
+        self_surpass_lane=self_surpass_lane,
+    ):
         reasons.append("self-surpass objective requires boundary review")
 
     blocked_kinds = tuple(lane.kind for lane in lanes if not lane.is_viable)
