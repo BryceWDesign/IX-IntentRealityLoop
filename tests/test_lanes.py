@@ -14,6 +14,7 @@ from ix_intent_reality_loop.lanes import (
     ExecutionLaneKind,
     ExecutionLaneResult,
     ExecutionLaneStatus,
+    build_interpreted_lane_result,
     build_literal_lane_result,
     validate_execution_lane_result,
 )
@@ -221,3 +222,84 @@ def test_build_literal_lane_rejects_mismatched_focus_intent() -> None:
             proposed_output="Summarize.",
             predicted_outcome="Summary is produced.",
         )
+
+
+def test_build_interpreted_lane_uses_inferred_goal_as_objective() -> None:
+    packet = build_user_intent_packet(
+        intent_id="intent-009",
+        raw_request="Can you make this safer?",
+        interpreted_goal="Review the proposed action and recommend safer bounds.",
+        confidence=0.86,
+        constraints=("do not approve live actuation",),
+    )
+    focus = FocusSplitRecord(
+        record_id="focus-009",
+        intent_id="intent-009",
+        attended_requirement_codes=("goal", "constraint"),
+        omitted_requirement_codes=(),
+        attention_score=BoundedScore(1.0),
+        risk=FocusRisk.CLEAR,
+    )
+
+    lane = build_interpreted_lane_result(
+        lane_id="lane-009",
+        packet=packet,
+        focus_record=focus,
+        proposed_output="Recommend bounded safe-hold until risk is reviewed.",
+        predicted_outcome="Unsafe actuation remains blocked.",
+        interpretation_assumptions=("user is asking for review, not execution",),
+    )
+
+    assert lane.kind is ExecutionLaneKind.INTERPRETED
+    assert lane.objective == "Review the proposed action and recommend safer bounds."
+    assert lane.status is ExecutionLaneStatus.COMPLETE
+    assert "intent_not_permission" in lane.doctrine_rule_codes
+    assert "user is asking for review, not execution" in lane.assumptions
+    assert "interpreted objective differs from literal request" in lane.assumptions
+
+
+def test_build_interpreted_lane_blocks_when_focus_record_blocks_action() -> None:
+    packet = build_user_intent_packet(
+        intent_id="intent-010",
+        raw_request="Go ahead and touch it.",
+        interpreted_goal="Make physical contact with the object.",
+        confidence=0.83,
+    )
+    focus = FocusSplitRecord(
+        record_id="focus-010",
+        intent_id="intent-010",
+        attended_requirement_codes=("goal",),
+        omitted_requirement_codes=("permission",),
+        attention_score=BoundedScore(0.5),
+        risk=FocusRisk.BLOCKED,
+    )
+
+    lane = build_interpreted_lane_result(
+        lane_id="lane-010",
+        packet=packet,
+        focus_record=focus,
+        proposed_output="Hold because permission was not confirmed.",
+        predicted_outcome="Contact is prevented until permission is verified.",
+    )
+
+    assert lane.status is ExecutionLaneStatus.BLOCKED
+    assert "focus record blocks action" in lane.blocked_reasons
+
+
+def test_interpreted_lane_validation_requires_intent_permission_doctrine() -> None:
+    lane = ExecutionLaneResult(
+        lane_id="lane-011",
+        intent_id="intent-011",
+        kind=ExecutionLaneKind.INTERPRETED,
+        objective="Recommend a safer action.",
+        proposed_output="Use safe-hold.",
+        predicted_outcome="Unsafe action is prevented.",
+        confidence=BoundedScore(0.9),
+        status=ExecutionLaneStatus.COMPLETE,
+        doctrine_rule_codes=("interpretation_not_truth",),
+    )
+
+    findings = validate_execution_lane_result(lane)
+    finding_codes = {finding.code for finding in findings}
+
+    assert "interpreted_lane_missing_doctrine" in finding_codes
