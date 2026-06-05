@@ -16,6 +16,7 @@ from ix_intent_reality_loop.lanes import (
     ExecutionLaneStatus,
     build_interpreted_lane_result,
     build_literal_lane_result,
+    build_self_surpass_lane_result,
     validate_execution_lane_result,
 )
 
@@ -303,3 +304,124 @@ def test_interpreted_lane_validation_requires_intent_permission_doctrine() -> No
     finding_codes = {finding.code for finding in findings}
 
     assert "interpreted_lane_missing_doctrine" in finding_codes
+
+
+def test_build_self_surpass_lane_requires_improvement_inside_boundaries() -> None:
+    packet = build_user_intent_packet(
+        intent_id="intent-012",
+        raw_request="Give me the safest answer.",
+        interpreted_goal="Produce a bounded answer with safety evidence.",
+        confidence=0.92,
+        constraints=("do not claim live actuation approval",),
+    )
+    focus = FocusSplitRecord(
+        record_id="focus-012",
+        intent_id="intent-012",
+        attended_requirement_codes=("goal", "safety", "evidence"),
+        omitted_requirement_codes=(),
+        attention_score=BoundedScore(1.0),
+        risk=FocusRisk.CLEAR,
+    )
+
+    lane = build_self_surpass_lane_result(
+        lane_id="lane-012",
+        packet=packet,
+        focus_record=focus,
+        proposed_output="Provide the answer plus explicit safety limits.",
+        predicted_outcome="The result improves clarity without expanding authority.",
+        improvement_confidence=0.88,
+        improvement_claims=("adds explicit safety limits",),
+        boundary_checks=("human authority remains final", "no live actuation approval"),
+    )
+
+    assert lane.kind is ExecutionLaneKind.SELF_SURPASS
+    assert lane.status is ExecutionLaneStatus.COMPLETE
+    assert lane.confidence.value == 0.88
+    assert "surpass_first_pass_not_user_authority" in lane.doctrine_rule_codes
+    assert "human authority remains final" in lane.constraints_preserved
+
+
+def test_build_self_surpass_lane_blocks_unclear_intent() -> None:
+    packet = build_user_intent_packet(
+        intent_id="intent-013",
+        raw_request="Do the best thing.",
+        interpreted_goal="Perform an unspecified best action.",
+        confidence=0.42,
+        uncertainty_reasons=("task target is unspecified",),
+    )
+    focus = FocusSplitRecord(
+        record_id="focus-013",
+        intent_id="intent-013",
+        attended_requirement_codes=("goal",),
+        omitted_requirement_codes=(),
+        attention_score=BoundedScore(1.0),
+        risk=FocusRisk.CLEAR,
+    )
+
+    lane = build_self_surpass_lane_result(
+        lane_id="lane-013",
+        packet=packet,
+        focus_record=focus,
+        proposed_output="Ask for clarification before improving the outcome.",
+        predicted_outcome="Objective drift is prevented.",
+        improvement_confidence=0.8,
+        improvement_claims=("would improve specificity after clarification",),
+        boundary_checks=("do not infer missing target",),
+    )
+
+    assert lane.status is ExecutionLaneStatus.BLOCKED
+    assert "self-surpass cannot proceed while intent is unclear" in lane.blocked_reasons
+
+
+def test_build_self_surpass_lane_blocks_missing_claims_or_boundaries() -> None:
+    packet = build_user_intent_packet(
+        intent_id="intent-014",
+        raw_request="Improve this answer.",
+        interpreted_goal="Improve the answer without changing the request.",
+        confidence=0.86,
+    )
+    focus = FocusSplitRecord(
+        record_id="focus-014",
+        intent_id="intent-014",
+        attended_requirement_codes=("goal",),
+        omitted_requirement_codes=(),
+        attention_score=BoundedScore(1.0),
+        risk=FocusRisk.CLEAR,
+    )
+
+    lane = build_self_surpass_lane_result(
+        lane_id="lane-014",
+        packet=packet,
+        focus_record=focus,
+        proposed_output="Improve wording.",
+        predicted_outcome="The answer is clearer.",
+        improvement_confidence=0.9,
+        improvement_claims=(),
+        boundary_checks=(),
+    )
+
+    assert lane.status is ExecutionLaneStatus.BLOCKED
+    assert "self-surpass lane requires improvement claims" in lane.blocked_reasons
+    assert "self-surpass lane requires boundary checks" in lane.blocked_reasons
+
+
+def test_self_surpass_lane_validation_requires_boundary_doctrine() -> None:
+    lane = ExecutionLaneResult(
+        lane_id="lane-015",
+        intent_id="intent-015",
+        kind=ExecutionLaneKind.SELF_SURPASS,
+        objective="Improve the answer.",
+        proposed_output="Improved answer.",
+        predicted_outcome="The answer improves.",
+        confidence=BoundedScore(0.9),
+        status=ExecutionLaneStatus.COMPLETE,
+        doctrine_rule_codes=("completion_not_output",),
+        constraints_preserved=(),
+    )
+
+    findings = validate_execution_lane_result(lane)
+    finding_codes = {finding.code for finding in findings}
+
+    assert "self_surpass_lane_missing_boundary_doctrine" in finding_codes
+    assert "self_surpass_lane_missing_authority_doctrine" in finding_codes
+    assert "self_surpass_lane_missing_boundary_checks" in finding_codes
