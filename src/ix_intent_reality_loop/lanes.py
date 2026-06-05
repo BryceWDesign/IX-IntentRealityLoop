@@ -4,6 +4,9 @@ Execution lanes keep competing treatments of the same request separate. The
 literal lane preserves the request as written so later arbiters can detect when
 interpretation, improvement pressure, or convenience drifted away from the
 actual user input.
+
+The interpreted lane records what the system believes the user likely means
+while preserving uncertainty, constraints, permission boundaries, and doctrine.
 """
 
 from __future__ import annotations
@@ -137,6 +140,47 @@ class ExecutionLaneResult:
         return self.status is ExecutionLaneStatus.COMPLETE and not self.blocked_reasons
 
 
+def _validate_focus_record_matches_packet(
+    *,
+    packet: IntentPacket,
+    focus_record: FocusSplitRecord,
+) -> None:
+    """Require focus analysis to belong to the same intent packet."""
+
+    if focus_record.intent_id != packet.intent_id:
+        raise ValueError("focus record intent_id must match intent packet intent_id")
+
+
+def _common_blocked_reasons(
+    *,
+    packet: IntentPacket,
+    focus_record: FocusSplitRecord,
+) -> tuple[str, ...]:
+    """Return common blocked reasons shared by execution lanes."""
+
+    blocked_reasons: list[str] = []
+
+    if packet.status is IntentStatus.BLOCKED:
+        blocked_reasons.append("intent packet is blocked")
+
+    if focus_record.blocks_action:
+        blocked_reasons.append("focus record blocks action")
+
+    return tuple(blocked_reasons)
+
+
+def _status_from_blocked_reasons(
+    blocked_reasons: tuple[str, ...],
+) -> ExecutionLaneStatus:
+    """Return a lane status from blocked reasons."""
+
+    return (
+        ExecutionLaneStatus.BLOCKED
+        if blocked_reasons
+        else ExecutionLaneStatus.COMPLETE
+    )
+
+
 def build_literal_lane_result(
     *,
     lane_id: str,
@@ -152,26 +196,16 @@ def build_literal_lane_result(
     clarification needs are preserved as assumptions instead of being hidden.
     """
 
-    if focus_record.intent_id != packet.intent_id:
-        raise ValueError("focus record intent_id must match intent packet intent_id")
+    _validate_focus_record_matches_packet(packet=packet, focus_record=focus_record)
 
-    blocked_reasons: list[str] = []
+    blocked_reasons = _common_blocked_reasons(
+        packet=packet,
+        focus_record=focus_record,
+    )
     assumptions: list[str] = []
-
-    if packet.status is IntentStatus.BLOCKED:
-        blocked_reasons.append("intent packet is blocked")
-
-    if focus_record.blocks_action:
-        blocked_reasons.append("focus record blocks action")
 
     if packet.requires_clarification:
         assumptions.append("literal request requires clarification before action")
-
-    status = (
-        ExecutionLaneStatus.BLOCKED
-        if blocked_reasons
-        else ExecutionLaneStatus.COMPLETE
-    )
 
     return ExecutionLaneResult(
         lane_id=lane_id,
@@ -181,7 +215,7 @@ def build_literal_lane_result(
         proposed_output=proposed_output,
         predicted_outcome=predicted_outcome,
         confidence=packet.confidence,
-        status=status,
+        status=_status_from_blocked_reasons(blocked_reasons),
         doctrine_rule_codes=(
             "thought_not_action",
             "interpretation_not_truth",
@@ -189,7 +223,59 @@ def build_literal_lane_result(
         ),
         assumptions=tuple(assumptions),
         constraints_preserved=packet.constraints,
-        blocked_reasons=tuple(blocked_reasons),
+        blocked_reasons=blocked_reasons,
+        focus_record_id=focus_record.record_id,
+    )
+
+
+def build_interpreted_lane_result(
+    *,
+    lane_id: str,
+    packet: IntentPacket,
+    focus_record: FocusSplitRecord,
+    proposed_output: str,
+    predicted_outcome: str,
+    interpretation_assumptions: tuple[str, ...] = (),
+) -> ExecutionLaneResult:
+    """Build an interpreted lane result from the inferred user goal.
+
+    The interpreted lane may improve usefulness over the literal wording, but it
+    must not treat interpretation as truth, permission, or completion. Any
+    uncertainty and assumptions remain visible to the arbiter.
+    """
+
+    _validate_focus_record_matches_packet(packet=packet, focus_record=focus_record)
+
+    blocked_reasons = _common_blocked_reasons(
+        packet=packet,
+        focus_record=focus_record,
+    )
+    assumptions = list(interpretation_assumptions)
+
+    if packet.requires_clarification:
+        assumptions.append("interpreted goal requires clarification before action")
+
+    if packet.raw_request.strip() != packet.interpreted_goal.strip():
+        assumptions.append("interpreted objective differs from literal request")
+
+    return ExecutionLaneResult(
+        lane_id=lane_id,
+        intent_id=packet.intent_id,
+        kind=ExecutionLaneKind.INTERPRETED,
+        objective=packet.interpreted_goal,
+        proposed_output=proposed_output,
+        predicted_outcome=predicted_outcome,
+        confidence=packet.confidence,
+        status=_status_from_blocked_reasons(blocked_reasons),
+        doctrine_rule_codes=(
+            "thought_not_action",
+            "intent_not_permission",
+            "interpretation_not_truth",
+            "completion_not_output",
+        ),
+        assumptions=tuple(assumptions),
+        constraints_preserved=packet.constraints,
+        blocked_reasons=blocked_reasons,
         focus_record_id=focus_record.record_id,
     )
 
@@ -240,6 +326,16 @@ def validate_execution_lane_result(
             blocker_finding(
                 "literal_lane_missing_doctrine",
                 "Literal lane must cite interpretation_not_truth doctrine.",
+            )
+        )
+
+    if lane.kind is ExecutionLaneKind.INTERPRETED and "intent_not_permission" not in (
+        lane.doctrine_rule_codes
+    ):
+        findings.append(
+            blocker_finding(
+                "interpreted_lane_missing_doctrine",
+                "Interpreted lane must cite intent_not_permission doctrine.",
             )
         )
 
