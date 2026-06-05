@@ -7,6 +7,9 @@ actual user input.
 
 The interpreted lane records what the system believes the user likely means
 while preserving uncertainty, constraints, permission boundaries, and doctrine.
+
+The self-surpass lane tries to improve beyond a first-pass answer without
+exceeding truth, user authority, safety, permission, or evidence boundaries.
 """
 
 from __future__ import annotations
@@ -181,6 +184,12 @@ def _status_from_blocked_reasons(
     )
 
 
+def _validated_text_tuple(values: tuple[str, ...], field_name: str) -> tuple[str, ...]:
+    """Return validated non-empty text values."""
+
+    return tuple(require_non_empty_text(value, field_name) for value in values)
+
+
 def build_literal_lane_result(
     *,
     lane_id: str,
@@ -250,7 +259,12 @@ def build_interpreted_lane_result(
         packet=packet,
         focus_record=focus_record,
     )
-    assumptions = list(interpretation_assumptions)
+    assumptions = list(
+        _validated_text_tuple(
+            interpretation_assumptions,
+            "interpretation_assumption",
+        )
+    )
 
     if packet.requires_clarification:
         assumptions.append("interpreted goal requires clarification before action")
@@ -276,6 +290,83 @@ def build_interpreted_lane_result(
         assumptions=tuple(assumptions),
         constraints_preserved=packet.constraints,
         blocked_reasons=blocked_reasons,
+        focus_record_id=focus_record.record_id,
+    )
+
+
+def build_self_surpass_lane_result(
+    *,
+    lane_id: str,
+    packet: IntentPacket,
+    focus_record: FocusSplitRecord,
+    proposed_output: str,
+    predicted_outcome: str,
+    improvement_confidence: float,
+    improvement_claims: tuple[str, ...],
+    boundary_checks: tuple[str, ...],
+) -> ExecutionLaneResult:
+    """Build a bounded self-surpass lane result.
+
+    The self-surpass lane is the repo's controlled improvement pressure. It may
+    propose a stronger result than a first-pass answer, but only when it can name
+    the improvement and the boundaries that prevent objective drift.
+    """
+
+    _validate_focus_record_matches_packet(packet=packet, focus_record=focus_record)
+
+    validated_improvement_claims = _validated_text_tuple(
+        improvement_claims,
+        "improvement_claim",
+    )
+    validated_boundary_checks = _validated_text_tuple(
+        boundary_checks,
+        "boundary_check",
+    )
+    bounded_improvement_confidence = BoundedScore(improvement_confidence)
+    combined_confidence = BoundedScore(
+        min(packet.confidence.value, bounded_improvement_confidence.value)
+    )
+    blocked_reasons = list(
+        _common_blocked_reasons(packet=packet, focus_record=focus_record)
+    )
+
+    if packet.requires_clarification:
+        blocked_reasons.append("self-surpass cannot proceed while intent is unclear")
+
+    if not validated_improvement_claims:
+        blocked_reasons.append("self-surpass lane requires improvement claims")
+
+    if not validated_boundary_checks:
+        blocked_reasons.append("self-surpass lane requires boundary checks")
+
+    assumptions = (
+        "self-surpass candidate must remain inside user authority",
+        "self-surpass candidate must not convert improvement into permission",
+        *validated_improvement_claims,
+    )
+
+    return ExecutionLaneResult(
+        lane_id=lane_id,
+        intent_id=packet.intent_id,
+        kind=ExecutionLaneKind.SELF_SURPASS,
+        objective=(
+            "Improve the first-pass outcome while preserving the original request, "
+            "truth boundaries, permission, safety, and evidence limits."
+        ),
+        proposed_output=proposed_output,
+        predicted_outcome=predicted_outcome,
+        confidence=combined_confidence,
+        status=_status_from_blocked_reasons(tuple(blocked_reasons)),
+        doctrine_rule_codes=(
+            "thought_not_action",
+            "intent_not_permission",
+            "surpass_first_pass_not_user_authority",
+            "human_authority_persists",
+            "completion_not_output",
+        ),
+        assumptions=assumptions,
+        constraints_preserved=(*packet.constraints, *validated_boundary_checks),
+        blocked_reasons=tuple(blocked_reasons),
         focus_record_id=focus_record.record_id,
     )
 
@@ -338,5 +429,28 @@ def validate_execution_lane_result(
                 "Interpreted lane must cite intent_not_permission doctrine.",
             )
         )
+
+    if lane.kind is ExecutionLaneKind.SELF_SURPASS:
+        if "surpass_first_pass_not_user_authority" not in lane.doctrine_rule_codes:
+            findings.append(
+                blocker_finding(
+                    "self_surpass_lane_missing_boundary_doctrine",
+                    "Self-surpass lane must cite bounded self-surpass doctrine.",
+                )
+            )
+        if "human_authority_persists" not in lane.doctrine_rule_codes:
+            findings.append(
+                blocker_finding(
+                    "self_surpass_lane_missing_authority_doctrine",
+                    "Self-surpass lane must cite persistent human authority doctrine.",
+                )
+            )
+        if not lane.constraints_preserved:
+            findings.append(
+                blocker_finding(
+                    "self_surpass_lane_missing_boundary_checks",
+                    "Self-surpass lane must preserve explicit boundary checks.",
+                )
+            )
 
     return tuple(findings)
