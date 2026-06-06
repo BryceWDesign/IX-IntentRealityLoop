@@ -3,7 +3,6 @@ from datetime import UTC, datetime
 import pytest
 
 from ix_intent_reality_loop.core import (
-    BoundedScore,
     EvidenceStatus,
     ValidationFinding,
     ValidationSeverity,
@@ -216,9 +215,7 @@ def test_validate_replay_manifest_blocks_invalid_manifest() -> None:
     assert "manifest_missing_no_agi_doctrine" in finding_codes
     assert "manifest_bundle_digest_subject_mismatch" in finding_codes
     assert "manifest_missing_item_digests" in finding_codes
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
 
 
 def test_validate_replay_manifest_warns_for_rejected_bundle() -> None:
