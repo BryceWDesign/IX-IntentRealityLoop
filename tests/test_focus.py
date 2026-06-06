@@ -78,7 +78,9 @@ def test_build_focus_split_record_marks_clear_when_all_requirements_attended() -
     assert not validate_focus_split_record(record)
 
 
-def test_build_focus_split_record_marks_split_when_nonblocking_item_is_omitted() -> None:
+def test_build_focus_split_record_marks_split_when_nonblocking_item_is_omitted() -> (
+    None
+):
     requirements = (
         FocusRequirement(
             code="summarize",
@@ -132,12 +134,12 @@ def test_build_focus_split_record_blocks_when_blocking_requirement_is_omitted() 
 
     assert record.risk is FocusRisk.BLOCKED
     assert record.blocks_action
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
 
 
-def test_build_focus_split_record_marks_glossed_over_when_most_items_are_omitted() -> None:
+def test_build_focus_split_record_marks_glossed_over_when_most_items_are_omitted() -> (
+    None
+):
     requirements = (
         FocusRequirement(
             code="literal_request",
