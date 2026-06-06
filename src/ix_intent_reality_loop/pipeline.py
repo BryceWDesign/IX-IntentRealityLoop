@@ -21,7 +21,6 @@ from ix_intent_reality_loop.blackfox_handoff import (
     build_blackfox_governance_handoff,
 )
 from ix_intent_reality_loop.core import (
-    EvidenceStatus,
     ValidationFinding,
     ValidationSeverity,
     blocker_finding,
@@ -110,9 +109,13 @@ def assemble_benchmark_evidence(
 ) -> IntentRealityLoopAssembly:
     """Run one benchmark scenario and assemble all downstream evidence artifacts."""
 
-    check_time = utc_now() if checked_at is None else require_aware_utc(
-        checked_at,
-        "checked_at",
+    check_time = (
+        utc_now()
+        if checked_at is None
+        else require_aware_utc(
+            checked_at,
+            "checked_at",
+        )
     )
     run_result = run_benchmark_scenario(
         run_id=f"{scenario.scenario_id}-run",
@@ -254,7 +257,9 @@ def build_replay_log_from_run_result(
             event_type=ReplayEventType.SAFETY_GATE,
             subject_id=run_result.safety_result.gate_id,
             summary="Safety gate evaluated risk state before bounded action.",
-            payload={"interaction_state": run_result.safety_result.interaction_state.value},
+            payload={
+                "interaction_state": run_result.safety_result.interaction_state.value
+            },
         ),
         _event(
             event_id=f"{run_result.scenario_id}-event-010-action",
