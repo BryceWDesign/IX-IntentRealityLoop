@@ -25,6 +25,9 @@ keywords = [
 ]
 dependencies = []
 
+[project.scripts]
+ix-intent-reality-loop = "ix_intent_reality_loop.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
