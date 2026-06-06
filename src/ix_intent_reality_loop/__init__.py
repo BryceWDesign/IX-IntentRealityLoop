@@ -250,6 +250,7 @@ __all__ = [
     "ValidationFinding",
     "ValidationSeverity",
     "__version__",
+    "apply_memory_binding_decision",
     "arbitrate_fourth_eye_decision",
     "assemble_benchmark_evidence",
     "assert_no_prohibited_claims",
