@@ -26,6 +26,7 @@ def _lane(
     objective: str | None = None,
     status: ExecutionLaneStatus = ExecutionLaneStatus.COMPLETE,
     blocked_reasons: tuple[str, ...] = (),
+    constraints_preserved: tuple[str, ...] = (),
 ) -> ExecutionLaneResult:
     return ExecutionLaneResult(
         lane_id=lane_id,
@@ -37,6 +38,7 @@ def _lane(
         confidence=BoundedScore(confidence),
         status=status,
         doctrine_rule_codes=("completion_not_output",),
+        constraints_preserved=constraints_preserved,
         blocked_reasons=blocked_reasons,
     )
 
@@ -98,9 +100,7 @@ def test_arbitrate_escalates_when_triadic_coverage_is_missing() -> None:
     assert decision.disposition is DecisionDisposition.ESCALATE
     assert decision.blocks_action
     assert "comparison_missing_triadic_lane" in decision.preserved_warnings
-    assert any(
-        finding.severity is ValidationSeverity.WARNING for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.WARNING for finding in findings)
 
 
 def test_arbitrate_safe_holds_when_no_viable_lane_survives() -> None:
@@ -230,6 +230,7 @@ def test_arbitrate_allows_when_full_alignment_has_no_divergence() -> None:
         kind=ExecutionLaneKind.SELF_SURPASS,
         confidence=0.81,
         objective="Summarize the evidence.",
+        constraints_preserved=("boundary-preserved",),
     )
     comparison = build_lane_comparison_record(
         comparison_id="comparison-007",
