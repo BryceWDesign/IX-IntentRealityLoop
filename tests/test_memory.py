@@ -173,9 +173,7 @@ def test_validate_memory_binding_decision_blocks_invalid_update() -> None:
     assert "memory_missing_completion_doctrine" in finding_codes
     assert "memory_update_missing_keys" in finding_codes
     assert "memory_update_without_complete_evidence" in finding_codes
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
 
 
 def test_validate_memory_binding_decision_blocks_invalid_quarantine() -> None:
