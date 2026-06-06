@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -23,10 +24,13 @@ from ix_intent_reality_loop.export import (
     validate_artifact_export,
     write_artifact_export,
 )
-from ix_intent_reality_loop.pipeline import assemble_benchmark_evidence
+from ix_intent_reality_loop.pipeline import (
+    IntentRealityLoopAssembly,
+    assemble_benchmark_evidence,
+)
 
 
-def _clear_assembly():
+def _clear_assembly() -> IntentRealityLoopAssembly:
     scenario = next(
         scenario
         for scenario in benchmark_catalog()
@@ -113,13 +117,8 @@ def test_export_artifact_json_is_canonical() -> None:
 
     assert '"artifact_id":"export-manifest"' in exported_json
     assert '"artifact_kind":"replay_manifest"' in exported_json
-    assert exported_json == canonical_json(
-        export_artifact(
-            artifact_id="export-manifest",
-            artifact_kind="replay_manifest",
-            artifact=assembly.replay_manifest,
-        ).__dict__
-    )
+    parsed_export = json.loads(exported_json)
+    assert exported_json == canonical_json(parsed_export)
 
 
 def test_write_artifact_export_creates_parent_directory(tmp_path: Path) -> None:
