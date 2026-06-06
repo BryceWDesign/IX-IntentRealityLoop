@@ -93,7 +93,9 @@ class ConsentRecord:
             ),
         )
 
-    def status_at(self, *, requested_scope: PermissionScope, checked_at: datetime) -> ConsentStatus:
+    def status_at(
+        self, *, requested_scope: PermissionScope, checked_at: datetime
+    ) -> ConsentStatus:
         """Return consent status for a requested scope at a specific time."""
 
         normalized_checked_at = require_aware_utc(checked_at, "checked_at")
@@ -113,10 +115,13 @@ class ConsentRecord:
     ) -> bool:
         """Return whether consent is fresh for the requested scope."""
 
-        return self.status_at(
-            requested_scope=requested_scope,
-            checked_at=checked_at,
-        ) is ConsentStatus.FRESH
+        return (
+            self.status_at(
+                requested_scope=requested_scope,
+                checked_at=checked_at,
+            )
+            is ConsentStatus.FRESH
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -226,9 +231,13 @@ def evaluate_permission_gate(
 ) -> PermissionGateResult:
     """Evaluate permission and consent for an arbiter decision."""
 
-    check_time = utc_now() if checked_at is None else require_aware_utc(
-        checked_at,
-        "checked_at",
+    check_time = (
+        utc_now()
+        if checked_at is None
+        else require_aware_utc(
+            checked_at,
+            "checked_at",
+        )
     )
     doctrine_rule_codes = (
         "intent_not_permission",
@@ -242,7 +251,9 @@ def evaluate_permission_gate(
             intent_id=decision.intent_id,
             decision_id=decision.decision_id,
             requested_scope=requested_scope,
-            consent_status=ConsentStatus.ABSENT if consent is None else (
+            consent_status=ConsentStatus.ABSENT
+            if consent is None
+            else (
                 consent.status_at(
                     requested_scope=requested_scope,
                     checked_at=check_time,
@@ -251,10 +262,14 @@ def evaluate_permission_gate(
             disposition=DecisionDisposition.SAFE_HOLD,
             authority_state=AuthorityState.HUMAN_REVIEW_REQUIRED,
             confidence=BoundedScore(0.0),
-            rationale="Permission gate safe-held because arbiter decision blocks action.",
+            rationale=(
+                "Permission gate safe-held because arbiter decision blocks action."
+            ),
             doctrine_rule_codes=doctrine_rule_codes,
             consent_id=None if consent is None else consent.consent_id,
-            required_next_steps=("resolve arbiter blocking decision before permission",),
+            required_next_steps=(
+                "resolve arbiter blocking decision before permission",
+            ),
             preserved_constraints=() if consent is None else consent.constraints,
             created_at=check_time,
         )
@@ -265,7 +280,9 @@ def evaluate_permission_gate(
             intent_id=decision.intent_id,
             decision_id=decision.decision_id,
             requested_scope=requested_scope,
-            consent_status=ConsentStatus.ABSENT if consent is None else (
+            consent_status=ConsentStatus.ABSENT
+            if consent is None
+            else (
                 consent.status_at(
                     requested_scope=requested_scope,
                     checked_at=check_time,
@@ -280,7 +297,9 @@ def evaluate_permission_gate(
             ),
             doctrine_rule_codes=doctrine_rule_codes,
             consent_id=None if consent is None else consent.consent_id,
-            required_next_steps=("use simulated action or bounded contact review only",),
+            required_next_steps=(
+                "use simulated action or bounded contact review only",
+            ),
             preserved_constraints=() if consent is None else consent.constraints,
             created_at=check_time,
         )
@@ -318,7 +337,9 @@ def evaluate_permission_gate(
             disposition=DecisionDisposition.DEFER,
             authority_state=AuthorityState.HUMAN_REVIEW_REQUIRED,
             confidence=BoundedScore(0.0),
-            rationale=f"Permission gate deferred because consent is {consent_status.value}.",
+            rationale=(
+                f"Permission gate deferred because consent is {consent_status.value}."
+            ),
             doctrine_rule_codes=doctrine_rule_codes,
             consent_id=consent.consent_id,
             required_next_steps=("refresh consent before action gating",),
