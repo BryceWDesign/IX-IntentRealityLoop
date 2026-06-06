@@ -84,7 +84,9 @@ def test_reality_feedback_signal_rejects_empty_observed_value() -> None:
         )
 
 
-def test_build_reality_feedback_frame_confirms_matching_high_confidence_signal() -> None:
+def test_build_reality_feedback_frame_confirms_matching_high_confidence_signal() -> (
+    None
+):
     frame = build_reality_feedback_frame(
         frame_id="feedback-001",
         action_decision=_action_decision(),
@@ -173,7 +175,9 @@ def test_reality_feedback_frame_rejects_naive_timestamp() -> None:
         )
 
 
-def test_validate_reality_feedback_frame_blocks_invalid_confirmed_contradiction() -> None:
+def test_validate_reality_feedback_frame_blocks_invalid_confirmed_contradiction() -> (
+    None
+):
     frame = RealityFeedbackFrame(
         frame_id="feedback-007",
         intent_id="intent-001",
@@ -195,6 +199,4 @@ def test_validate_reality_feedback_frame_blocks_invalid_confirmed_contradiction(
     assert "feedback_missing_completion_doctrine" in finding_codes
     assert "feedback_confirmed_despite_contradiction" in finding_codes
     assert "feedback_missing_no_live_actuation_limit" in finding_codes
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
