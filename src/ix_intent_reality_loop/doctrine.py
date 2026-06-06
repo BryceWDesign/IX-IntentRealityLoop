@@ -7,10 +7,11 @@ reference without relying on README claims.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Final, Mapping
+from typing import Final
 
 
 class DoctrineSeverity(StrEnum):
@@ -164,9 +165,7 @@ def find_prohibited_claims(text: str) -> tuple[str, ...]:
 
     lowered_text = text.lower()
     return tuple(
-        fragment
-        for fragment in PROHIBITED_CLAIM_FRAGMENTS
-        if fragment in lowered_text
+        fragment for fragment in PROHIBITED_CLAIM_FRAGMENTS if fragment in lowered_text
     )
 
 
