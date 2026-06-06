@@ -79,10 +79,7 @@ def to_primitive(value: Any) -> Any:
     """Convert supported runtime values into JSON-compatible primitives."""
 
     if is_dataclass(value) and not isinstance(value, type):
-        return {
-            str(key): to_primitive(item)
-            for key, item in asdict(value).items()
-        }
+        return {str(key): to_primitive(item) for key, item in asdict(value).items()}
 
     if isinstance(value, Enum):
         return value.value
