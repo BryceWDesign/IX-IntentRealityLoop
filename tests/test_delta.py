@@ -180,9 +180,7 @@ def test_validate_outcome_delta_blocks_invalid_matched_delta() -> None:
     assert "delta_missing_evidence_doctrine" in finding_codes
     assert "delta_missing_completion_doctrine" in finding_codes
     assert "delta_matched_score_below_memory_threshold" in finding_codes
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
 
 
 def test_validate_outcome_delta_blocks_contradiction_without_reasons() -> None:
