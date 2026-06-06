@@ -56,8 +56,7 @@ class LaneComparisonRecord:
             self,
             "lane_ids",
             tuple(
-                require_non_empty_text(lane_id, "lane_id")
-                for lane_id in self.lane_ids
+                require_non_empty_text(lane_id, "lane_id") for lane_id in self.lane_ids
             ),
         )
         object.__setattr__(
@@ -183,9 +182,12 @@ def _objective_divergence_reasons(
     interpreted_objective = objectives_by_kind.get(ExecutionLaneKind.INTERPRETED)
     self_surpass_lane = lanes_by_kind.get(ExecutionLaneKind.SELF_SURPASS)
 
-    if literal_objective and interpreted_objective:
-        if literal_objective.strip() != interpreted_objective.strip():
-            reasons.append("literal and interpreted objectives differ")
+    if (
+        literal_objective
+        and interpreted_objective
+        and literal_objective.strip() != interpreted_objective.strip()
+    ):
+        reasons.append("literal and interpreted objectives differ")
 
     if _self_surpass_requires_boundary_review(
         literal_objective=literal_objective,
