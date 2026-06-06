@@ -200,7 +200,7 @@ def plan_bounded_action(
             execution_limits=("no execution while safety gate blocks action",),
         )
 
-    execution_limits = (
+    execution_limits: tuple[str, ...] = (
         "evaluation runtime only",
         "no live physical actuation",
         "human authority remains final",
