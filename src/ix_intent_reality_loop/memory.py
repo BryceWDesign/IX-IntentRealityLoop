@@ -97,8 +97,7 @@ class MemoryBindingDecision:
             self,
             "memory_keys",
             tuple(
-                require_non_empty_text(key, "memory_key")
-                for key in self.memory_keys
+                require_non_empty_text(key, "memory_key") for key in self.memory_keys
             ),
         )
         object.__setattr__(
