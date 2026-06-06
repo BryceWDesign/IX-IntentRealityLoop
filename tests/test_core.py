@@ -9,7 +9,6 @@ from ix_intent_reality_loop.core import (
     EvidenceStatus,
     ValidationSeverity,
     blocker_finding,
-    clamp_score,
     require_aware_utc,
     require_mapping,
     require_non_empty_text,
@@ -19,13 +18,13 @@ from ix_intent_reality_loop.core import (
 
 
 def test_core_enums_preserve_governed_decision_vocabulary() -> None:
-    assert DecisionDisposition.ALLOW == "allow"
-    assert DecisionDisposition.SAFE_HOLD == "safe_hold"
-    assert AuthorityState.SYSTEM_RECOMMENDATION_ONLY == (
+    assert DecisionDisposition.ALLOW.value == "allow"
+    assert DecisionDisposition.SAFE_HOLD.value == "safe_hold"
+    assert AuthorityState.SYSTEM_RECOMMENDATION_ONLY.value == (
         "system_recommendation_only"
     )
-    assert EvidenceStatus.COMPLETE == "complete"
-    assert ValidationSeverity.BLOCKER == "blocker"
+    assert EvidenceStatus.COMPLETE.value == "complete"
+    assert ValidationSeverity.BLOCKER.value == "blocker"
 
 
 def test_bounded_score_accepts_closed_interval() -> None:
@@ -35,10 +34,10 @@ def test_bounded_score_accepts_closed_interval() -> None:
 
 
 def test_bounded_score_rejects_invalid_values() -> None:
-    with pytest.raises(ValueError, match="between 0.0 and 1.0"):
+    with pytest.raises(ValueError, match=r"between 0\.0 and 1\.0"):
         BoundedScore(-0.01)
 
-    with pytest.raises(ValueError, match="between 0.0 and 1.0"):
+    with pytest.raises(ValueError, match=r"between 0\.0 and 1\.0"):
         BoundedScore(1.01)
 
     with pytest.raises(TypeError, match="numeric"):
@@ -51,7 +50,7 @@ def test_bounded_score_threshold_helpers_validate_thresholds() -> None:
     assert score.is_at_least(0.75)
     assert score.is_below(0.9)
 
-    with pytest.raises(ValueError, match="between 0.0 and 1.0"):
+    with pytest.raises(ValueError, match=r"between 0\.0 and 1\.0"):
         score.is_at_least(2.0)
 
 
