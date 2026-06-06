@@ -131,7 +131,9 @@ class FourthEyeDecision:
         }
 
 
-def _lane_index(lanes: tuple[ExecutionLaneResult, ...]) -> dict[str, ExecutionLaneResult]:
+def _lane_index(
+    lanes: tuple[ExecutionLaneResult, ...],
+) -> dict[str, ExecutionLaneResult]:
     """Return lanes keyed by lane id, rejecting duplicates."""
 
     indexed: dict[str, ExecutionLaneResult] = {}
@@ -186,7 +188,9 @@ def arbitrate_fourth_eye_decision(
             confidence=BoundedScore(0.0),
             rationale="Arbitration escalated because triadic lane coverage is missing.",
             doctrine_rule_codes=doctrine_rule_codes,
-            required_next_steps=("supply literal, interpreted, and self-surpass lanes",),
+            required_next_steps=(
+                "supply literal, interpreted, and self-surpass lanes",
+            ),
             preserved_warnings=(*blocker_codes, *warning_codes),
         )
 
@@ -293,7 +297,10 @@ def validate_fourth_eye_decision(
             )
         )
 
-    if decision.disposition is DecisionDisposition.ALLOW and decision.preserved_warnings:
+    if (
+        decision.disposition is DecisionDisposition.ALLOW
+        and decision.preserved_warnings
+    ):
         findings.append(
             warning_finding(
                 "arbiter_allow_preserves_warnings",
