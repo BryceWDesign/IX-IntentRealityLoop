@@ -1,5 +1,7 @@
 from datetime import UTC, datetime
 
+import pytest
+
 from ix_intent_reality_loop.core import (
     AuthorityState,
     BoundedScore,
@@ -156,9 +158,7 @@ def test_evaluate_safety_gate_safe_holds_red_signal() -> None:
     assert result.disposition is DecisionDisposition.SAFE_HOLD
     assert result.interaction_state is InteractionState.EMERGENCY_RETREAT
     assert result.blocks_action
-    assert any(
-        finding.severity is ValidationSeverity.WARNING for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.WARNING for finding in findings)
 
 
 def test_evaluate_safety_gate_safe_holds_blocking_signal() -> None:
@@ -219,17 +219,13 @@ def test_evaluate_safety_gate_rejects_mismatched_intent() -> None:
         ),
     )
 
-    try:
+    with pytest.raises(ValueError, match="safety map intent_id must match"):
         evaluate_safety_gate(
             gate_id="safety-009",
             permission_result=_permission_result(),
             safety_map=safety_map,
             checked_at=datetime(2026, 1, 1, tzinfo=UTC),
         )
-    except ValueError as exc:
-        assert "safety map intent_id must match" in str(exc)
-    else:
-        raise AssertionError("expected mismatched intent ValueError")
 
 
 def test_validate_safety_gate_result_blocks_invalid_allow() -> None:
