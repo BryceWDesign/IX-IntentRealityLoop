@@ -162,6 +162,4 @@ def test_validate_benchmark_catalog_detects_duplicate_ids() -> None:
 
     assert "benchmark_catalog_duplicate_ids" in finding_codes
     assert "benchmark_catalog_missing_required_kind" in finding_codes
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
