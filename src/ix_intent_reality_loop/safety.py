@@ -114,8 +114,7 @@ class SafetyMap:
         """Return whether any signal blocks action."""
 
         return any(
-            signal.is_blocking
-            or signal.level in {SafetyLevel.RED, SafetyLevel.UNKNOWN}
+            signal.is_blocking or signal.level in {SafetyLevel.RED, SafetyLevel.UNKNOWN}
             for signal in self.signals
         )
 
@@ -230,9 +229,13 @@ def evaluate_safety_gate(
 ) -> SafetyGateResult:
     """Evaluate safety state for a permission-gated decision."""
 
-    check_time = utc_now() if checked_at is None else require_aware_utc(
-        checked_at,
-        "checked_at",
+    check_time = (
+        utc_now()
+        if checked_at is None
+        else require_aware_utc(
+            checked_at,
+            "checked_at",
+        )
     )
     if safety_map.intent_id != permission_result.intent_id:
         raise ValueError("safety map intent_id must match permission result intent_id")
@@ -310,7 +313,9 @@ def evaluate_safety_gate(
             disposition=DecisionDisposition.CLAMP,
             interaction_state=InteractionState.VERIFY,
             confidence=BoundedScore(min(permission_result.confidence.value, 0.75)),
-            rationale="Safety gate clamped because yellow safety signals require verify.",
+            rationale=(
+                "Safety gate clamped because yellow safety signals require verify."
+            ),
             doctrine_rule_codes=doctrine_rule_codes,
             preserved_signal_codes=safety_map.signal_codes,
             required_next_steps=("verify yellow safety signal before feedback loop",),
