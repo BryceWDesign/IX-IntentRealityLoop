@@ -8,9 +8,9 @@ model calls, and no hidden state.
 from __future__ import annotations
 
 import argparse
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 from ix_intent_reality_loop.benchmarks import (
     BenchmarkScenario,
@@ -20,7 +20,6 @@ from ix_intent_reality_loop.benchmarks import (
 )
 from ix_intent_reality_loop.core import ValidationSeverity, require_non_empty_text
 from ix_intent_reality_loop.export import (
-    ArtifactExport,
     export_artifact,
     write_artifact_export,
 )
