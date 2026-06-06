@@ -174,9 +174,7 @@ def test_build_lane_comparison_record_blocks_missing_triadic_lane() -> None:
     findings = validate_lane_comparison_record(record)
 
     assert record.omitted_lane_kinds == (ExecutionLaneKind.SELF_SURPASS,)
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
 
 
 def test_build_lane_comparison_record_allows_aligned_self_surpass_lane() -> None:
