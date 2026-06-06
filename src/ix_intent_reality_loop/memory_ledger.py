@@ -8,10 +8,10 @@ later replay and evidence layers can hash its records.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from types import MappingProxyType
-from typing import Mapping
 
 from ix_intent_reality_loop.core import (
     BoundedScore,
@@ -65,8 +65,7 @@ class MemoryLedgerEntry:
             self,
             "memory_keys",
             tuple(
-                require_non_empty_text(key, "memory_key")
-                for key in self.memory_keys
+                require_non_empty_text(key, "memory_key") for key in self.memory_keys
             ),
         )
         object.__setattr__(
@@ -141,9 +140,7 @@ class MemoryLedger:
         """Return count of downgraded entries."""
 
         return sum(
-            1
-            for entry in self.entries
-            if entry.action is MemoryBindingAction.DOWNGRADE
+            1 for entry in self.entries if entry.action is MemoryBindingAction.DOWNGRADE
         )
 
     def by_memory_key(self) -> Mapping[str, tuple[MemoryLedgerEntry, ...]]:
@@ -155,20 +152,13 @@ class MemoryLedger:
                 grouped.setdefault(memory_key, []).append(entry)
 
         return MappingProxyType(
-            {
-                memory_key: tuple(entries)
-                for memory_key, entries in grouped.items()
-            }
+            {memory_key: tuple(entries) for memory_key, entries in grouped.items()}
         )
 
     def quarantine_tags(self) -> frozenset[str]:
         """Return all quarantine tags present in the ledger."""
 
-        return frozenset(
-            tag
-            for entry in self.entries
-            for tag in entry.quarantine_tags
-        )
+        return frozenset(tag for entry in self.entries for tag in entry.quarantine_tags)
 
     def append(self, entry: MemoryLedgerEntry) -> MemoryLedger:
         """Return a new ledger snapshot with one appended entry."""
