@@ -141,7 +141,9 @@ class NegativeControlReport:
 
         control_ids = [result.control_id for result in self.results]
         if len(control_ids) != len(set(control_ids)):
-            raise ValueError("negative control results must use unique control_id values")
+            raise ValueError(
+                "negative control results must use unique control_id values"
+            )
 
     @property
     def passed_count(self) -> int:
