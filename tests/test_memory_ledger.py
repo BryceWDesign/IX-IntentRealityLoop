@@ -197,9 +197,7 @@ def test_validate_memory_ledger_blocks_invalid_positive_update() -> None:
 
     assert "memory_ledger_update_missing_keys" in finding_codes
     assert "memory_ledger_update_below_confidence_threshold" in finding_codes
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
 
 
 def test_validate_memory_ledger_warns_for_quarantine_and_downgrade() -> None:
