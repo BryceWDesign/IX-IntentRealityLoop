@@ -188,7 +188,9 @@ def _status_from_findings(findings: tuple[ValidationFinding, ...]) -> EvidenceSt
     return EvidenceStatus.COMPLETE
 
 
-def _validation_items(findings: tuple[ValidationFinding, ...]) -> tuple[EvidenceItem, ...]:
+def _validation_items(
+    findings: tuple[ValidationFinding, ...],
+) -> tuple[EvidenceItem, ...]:
     """Build evidence items for validation findings."""
 
     return tuple(
