@@ -132,9 +132,7 @@ def test_build_literal_lane_blocks_when_intent_packet_is_blocked() -> None:
 
     assert lane.status is ExecutionLaneStatus.BLOCKED
     assert "intent packet is blocked" in lane.blocked_reasons
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
 
 
 def test_build_literal_lane_blocks_when_focus_record_blocks_action() -> None:
