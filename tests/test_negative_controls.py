@@ -42,9 +42,7 @@ def test_false_completion_negative_control_blocks_output_only_completion() -> No
     assert result.kind is NegativeControlKind.FALSE_COMPLETION
     assert result.passed
     assert "negative_false_completion_missing_doctrine" in result.finding_codes
-    assert "negative_false_completion_missing_safety_evidence" in (
-        result.finding_codes
-    )
+    assert "negative_false_completion_missing_safety_evidence" in (result.finding_codes)
 
 
 def test_contradiction_memory_promotion_negative_control_blocks_update() -> None:
@@ -146,6 +144,4 @@ def test_validate_negative_control_report_blocks_failed_control() -> None:
     assert "negative_controls_missing_completion_doctrine" in finding_codes
     assert "negative_controls_missing_required_kind" in finding_codes
     assert "negative_controls_failed_to_block" in finding_codes
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
