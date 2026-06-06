@@ -49,10 +49,13 @@ def test_consent_record_tracks_fresh_scoped_consent() -> None:
         constraints=("simulation only",),
     )
 
-    assert consent.status_at(
-        requested_scope=PermissionScope.SIMULATED_ACTION,
-        checked_at=granted_at + timedelta(minutes=1),
-    ) is ConsentStatus.FRESH
+    assert (
+        consent.status_at(
+            requested_scope=PermissionScope.SIMULATED_ACTION,
+            checked_at=granted_at + timedelta(minutes=1),
+        )
+        is ConsentStatus.FRESH
+    )
     assert consent.is_fresh_for(
         requested_scope=PermissionScope.SIMULATED_ACTION,
         checked_at=granted_at + timedelta(minutes=1),
@@ -78,18 +81,27 @@ def test_consent_record_detects_stale_revoked_and_wrong_scope() -> None:
         revoked=True,
     )
 
-    assert consent.status_at(
-        requested_scope=PermissionScope.TEXT_OUTPUT,
-        checked_at=granted_at + timedelta(minutes=6),
-    ) is ConsentStatus.STALE
-    assert consent.status_at(
-        requested_scope=PermissionScope.SIMULATED_ACTION,
-        checked_at=granted_at + timedelta(minutes=1),
-    ) is ConsentStatus.WRONG_SCOPE
-    assert revoked.status_at(
-        requested_scope=PermissionScope.TEXT_OUTPUT,
-        checked_at=granted_at + timedelta(minutes=1),
-    ) is ConsentStatus.REVOKED
+    assert (
+        consent.status_at(
+            requested_scope=PermissionScope.TEXT_OUTPUT,
+            checked_at=granted_at + timedelta(minutes=6),
+        )
+        is ConsentStatus.STALE
+    )
+    assert (
+        consent.status_at(
+            requested_scope=PermissionScope.SIMULATED_ACTION,
+            checked_at=granted_at + timedelta(minutes=1),
+        )
+        is ConsentStatus.WRONG_SCOPE
+    )
+    assert (
+        revoked.status_at(
+            requested_scope=PermissionScope.TEXT_OUTPUT,
+            checked_at=granted_at + timedelta(minutes=1),
+        )
+        is ConsentStatus.REVOKED
+    )
 
 
 def test_consent_record_rejects_invalid_expiration() -> None:
@@ -213,9 +225,7 @@ def test_evaluate_permission_gate_refuses_live_physical_actuation() -> None:
     findings = validate_permission_gate_result(result)
 
     assert result.disposition is DecisionDisposition.REFUSE
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
 
 
 def test_evaluate_permission_gate_safe_holds_blocked_arbiter_decision() -> None:
