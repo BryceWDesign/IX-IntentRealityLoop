@@ -16,7 +16,11 @@ from ix_intent_reality_loop.core import (
     ValidationFinding,
     ValidationSeverity,
 )
-from ix_intent_reality_loop.evidence import EvidenceBundle, EvidenceItem, EvidenceItemKind
+from ix_intent_reality_loop.evidence import (
+    EvidenceBundle,
+    EvidenceItem,
+    EvidenceItemKind,
+)
 from ix_intent_reality_loop.manifest import (
     DigestAlgorithm,
     DigestRecord,
