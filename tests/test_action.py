@@ -1,5 +1,7 @@
 from datetime import UTC, datetime
 
+import pytest
+
 from ix_intent_reality_loop.action import (
     ActionMode,
     BoundedActionDecision,
@@ -118,13 +120,11 @@ def test_plan_bounded_action_safe_holds_blocked_safety_result() -> None:
     assert decision.disposition is DecisionDisposition.SAFE_HOLD
     assert decision.blocks_action
     assert decision.selected_action == "No action: hold bounded agency loop."
-    assert any(
-        finding.severity is ValidationSeverity.WARNING for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.WARNING for finding in findings)
 
 
 def test_bounded_action_decision_rejects_empty_action_text() -> None:
-    try:
+    with pytest.raises(ValueError, match="selected_action must not be empty"):
         BoundedActionDecision(
             action_id="action-006",
             intent_id="intent-001",
@@ -137,14 +137,10 @@ def test_bounded_action_decision_rejects_empty_action_text() -> None:
             doctrine_rule_codes=("completion_not_output",),
             preserved_safety_signals=("workspace_clear",),
         )
-    except ValueError as exc:
-        assert "selected_action must not be empty" in str(exc)
-    else:
-        raise AssertionError("expected empty selected_action ValueError")
 
 
 def test_bounded_action_decision_rejects_naive_timestamp() -> None:
-    try:
+    with pytest.raises(ValueError, match="created_at must be timezone-aware"):
         BoundedActionDecision(
             action_id="action-007",
             intent_id="intent-001",
@@ -158,10 +154,6 @@ def test_bounded_action_decision_rejects_naive_timestamp() -> None:
             preserved_safety_signals=("workspace_clear",),
             created_at=datetime(2026, 1, 1),
         )
-    except ValueError as exc:
-        assert "created_at must be timezone-aware" in str(exc)
-    else:
-        raise AssertionError("expected naive timestamp ValueError")
 
 
 def test_validate_bounded_action_decision_blocks_invalid_allow() -> None:
