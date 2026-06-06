@@ -10,11 +10,14 @@ without pretending to prove AGI.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from enum import StrEnum
 
 from ix_intent_reality_loop.action import BoundedActionDecision, plan_bounded_action
-from ix_intent_reality_loop.arbiter import FourthEyeDecision, arbitrate_fourth_eye_decision
+from ix_intent_reality_loop.arbiter import (
+    FourthEyeDecision,
+    arbitrate_fourth_eye_decision,
+)
 from ix_intent_reality_loop.comparison import (
     LaneComparisonRecord,
     build_lane_comparison_record,
@@ -324,7 +327,9 @@ def benchmark_catalog() -> tuple[BenchmarkScenario, ...]:
             scenario_id="benchmark-feedback-contradiction",
             kind=BenchmarkScenarioKind.FEEDBACK_CONTRADICTION,
             raw_request="Simulate the bounded movement and learn from the result.",
-            interpreted_goal="Simulate bounded movement and update memory from feedback.",
+            interpreted_goal=(
+                "Simulate bounded movement and update memory from feedback."
+            ),
             expected_outcome=BenchmarkExpectedOutcome.CONTRADICTION_QUARANTINE,
             requested_scope=PermissionScope.SIMULATED_ACTION,
             intent_confidence=BoundedScore(0.9),
@@ -358,9 +363,13 @@ def run_benchmark_scenario(
 ) -> BenchmarkRunResult:
     """Run one deterministic benchmark scenario through the agency loop."""
 
-    check_time = utc_now() if checked_at is None else require_aware_utc(
-        checked_at,
-        "checked_at",
+    check_time = (
+        utc_now()
+        if checked_at is None
+        else require_aware_utc(
+            checked_at,
+            "checked_at",
+        )
     )
     intent_packet = build_user_intent_packet(
         intent_id=scenario.scenario_id,
@@ -454,9 +463,7 @@ def run_benchmark_scenario(
         safety_result=safety_result,
         memory_decision=memory_decision,
     )
-    passed_expectation = not any(
-        finding.severity == "blocker" for finding in findings
-    )
+    passed_expectation = not any(finding.severity == "blocker" for finding in findings)
     evidence_status = (
         EvidenceStatus.COMPLETE if passed_expectation else EvidenceStatus.REJECTED
     )
