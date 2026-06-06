@@ -109,6 +109,4 @@ def test_validate_intent_packet_emits_blockers_and_warnings() -> None:
     assert "intent_uncertainty_present" in finding_codes
     assert "intent_contains_prohibited_action" in finding_codes
     assert "intent_status_blocked" in finding_codes
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
