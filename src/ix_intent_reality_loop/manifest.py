@@ -17,7 +17,6 @@ from enum import StrEnum
 from ix_intent_reality_loop.core import (
     EvidenceStatus,
     ValidationFinding,
-    ValidationSeverity,
     blocker_finding,
     require_aware_utc,
     require_non_empty_text,
