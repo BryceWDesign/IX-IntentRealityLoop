@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 from ix_intent_reality_loop.benchmarks import (
+    BenchmarkScenario,
     BenchmarkScenarioKind,
     benchmark_catalog,
     run_benchmark_scenario,
@@ -18,10 +19,8 @@ from ix_intent_reality_loop.replay import (
 )
 
 
-def _scenario(kind: BenchmarkScenarioKind):
-    return next(
-        scenario for scenario in benchmark_catalog() if scenario.kind is kind
-    )
+def _scenario(kind: BenchmarkScenarioKind) -> BenchmarkScenario:
+    return next(scenario for scenario in benchmark_catalog() if scenario.kind is kind)
 
 
 def test_build_replay_log_from_run_result_contains_full_event_sequence() -> None:
