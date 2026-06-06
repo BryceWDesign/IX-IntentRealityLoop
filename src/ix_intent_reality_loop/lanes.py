@@ -178,9 +178,7 @@ def _status_from_blocked_reasons(
     """Return a lane status from blocked reasons."""
 
     return (
-        ExecutionLaneStatus.BLOCKED
-        if blocked_reasons
-        else ExecutionLaneStatus.COMPLETE
+        ExecutionLaneStatus.BLOCKED if blocked_reasons else ExecutionLaneStatus.COMPLETE
     )
 
 
