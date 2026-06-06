@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import datetime
 
 import pytest
 
@@ -208,6 +208,4 @@ def test_validate_replay_event_log_blocks_missing_and_out_of_order_events() -> N
 
     assert "replay_log_missing_required_events" in finding_codes
     assert "replay_log_required_order_broken" in finding_codes
-    assert any(
-        finding.severity is ValidationSeverity.BLOCKER for finding in findings
-    )
+    assert any(finding.severity is ValidationSeverity.BLOCKER for finding in findings)
