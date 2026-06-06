@@ -116,8 +116,9 @@ class OutcomeDelta:
     def supports_memory_update(self) -> bool:
         """Return whether the delta supports positive memory update."""
 
-        return self.status is OutcomeDeltaStatus.MATCHED and self.match_score.is_at_least(
-            0.75
+        return (
+            self.status is OutcomeDeltaStatus.MATCHED
+            and self.match_score.is_at_least(0.75)
         )
 
     @property
@@ -168,7 +169,9 @@ def build_outcome_delta(
             match_score=BoundedScore(0.0),
             confidence=BoundedScore(0.0),
             doctrine_rule_codes=doctrine_rule_codes,
-            required_next_steps=("preserve no-action state and avoid memory promotion",),
+            required_next_steps=(
+                "preserve no-action state and avoid memory promotion",
+            ),
         )
 
     if feedback_frame.outcome is FeedbackOutcome.CONTRADICTED:
